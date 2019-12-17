@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<courses>
+  <course> <!-- Maybe in the future all in one XML file? -->
+    <courseID>cs123</courseID> <!-- Used in file names and displayed -->
+    <courseTitle>Software testing</courseTitle> <!-- String to be displayed -->
+    <retakeDuration>14</retakeDuration> <!-- int, number of days retake is possible -->
+    <startSkipMonth>1</startSkipMonth>
+<!-- 1 -->
+    <startSkipDay>21</startSkipDay>
+<!-- 21 -->
+    <endSkipMonth>1</endSkipMonth>
+<!-- 1 -->
+    <endSkipDay>25</endSkipDay>
+<!-- 25 -->
+    <dataLocation>/var/www/CS/webapps/xyz/WEB-INF/data/</dataLocation>
+    <!-- Not needed for CLI -->
+  </course>
+</courses>

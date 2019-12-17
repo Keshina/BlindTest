@@ -1,0 +1,132 @@
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+// All Tests demonstrate high Observability since we can see the output of our inputs as a String of the Calendar
+// All Tests demonstrate low Controllability since all we can supply is a month and year and each test performs the same operations.
+public class Calander_Test {
+	
+	 private final InputStream systemIn  = System.in;
+	 private final PrintStream systemOut = System.out;
+
+	 private ByteArrayOutputStream output;
+	 
+	@Before
+	   public void setUpOutput() {
+	      output = new ByteArrayOutputStream();
+	      System.setOut(new PrintStream(output));
+	   }
+
+	   @After
+	   public void restoreSystemInputOutput() {
+	      System.setIn(systemIn);
+	      System.setOut(systemOut);
+	   }
+	   
+
+	  // Tests normal execution, tests that no errors occur
+	@Test (expected = Test.None.class)
+	public void happyPath() {
+		String data = "4\n1997";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+		assertTrue(output.toString().contains("April 1997"));
+		assertTrue(output.toString().contains("30"));
+		assertFalse(output.toString().contains("31"));
+	}
+
+	// Tests leap year, tests that no errors occur
+	@Test (expected = Test.None.class)
+	public void testLeapYear() {
+		String data = "2\n1904";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+		assertTrue(output.toString().contains("February 1904"));
+		assertTrue(output.toString().contains("29"));
+		assertFalse(output.toString().contains("30"));
+
+	}
+	
+	// Tests non-leap year, tests that no errors occur
+	@Test (expected = Test.None.class)
+	public void testNonLeapYear() {
+		String data = "2\n1900";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+		assertTrue(output.toString().contains("February 1900"));
+		assertTrue(output.toString().contains("28"));
+		assertFalse(output.toString().contains("29"));
+
+	}
+	
+	// Tests negative month input, tests for IAE
+	@Test (expected = IllegalArgumentException.class)
+	public void testException1() {
+		String data = "-4\n1900";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+
+	}
+	
+	// Tests zero month input, tests for IAE
+	@Test (expected = IllegalArgumentException.class)
+	public void testException2() {
+		String data = "0\n1900";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+
+		
+	}
+
+	// Tests negative year, tests for IAE
+	@Test (expected = IllegalArgumentException.class)
+	public void testException3() {
+		String data = "4\n-1900";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+
+	}
+
+	// Tests non-integer month input, tests for IAE
+	@Test (expected = IllegalArgumentException.class)
+	public void testException4() {
+		String data = "four\n1997";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+
+	}
+	
+	// Tests non-integer year input, tests for IAE
+	@Test (expected = IllegalArgumentException.class)
+	public void testException5() {
+		String data = "4\n1900p";
+		ByteArrayInputStream input = new ByteArrayInputStream(data.getBytes());
+		System.setIn(input);
+		Calendar.main(new String[0]);
+		systemOut.println(output.toString());
+
+	}
+	
+}

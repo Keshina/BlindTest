@@ -1,0 +1,177 @@
+
+import static org.junit.Assert.*;
+import org.junit.*;
+
+import java.io.PrintStream;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+/*
+ * |-----------------------------------------------------------------|
+ * | printQuizScheduleForm WAS CHANGED TO PUBLIC FOR EASE OF TESTING |
+ * |-----------------------------------------------------------------|
+ */
+
+public class StudentTestsJupiter {
+
+	quizzes quiz;
+	retakes retake;
+	courseBean course;
+	
+	int quizCounter, retakeCounter;
+	final int hour = 10, minute = 0;
+	LocalDate date;
+	java.io.ByteArrayOutputStream out;
+	PrintStream stdout = System.out;
+	
+	//setting up quizzes, retakes, and a course to be used in each test.
+	//this is controllability
+	@Before
+	public void setup() {
+		quizCounter = 1;
+		retakeCounter = 1;
+		date = LocalDate.now().minusDays(1);
+		
+		//set up core quizzes
+		quiz = new quizzes();
+		//yesterday
+		quiz.addQuiz(new quizBean(quizCounter++, date.getMonthValue(), date.getDayOfMonth(), hour, minute));
+		date = date.minusDays(7);
+		//8 days ago
+		quiz.addQuiz(new quizBean(quizCounter++, date.getMonthValue(), date.getDayOfMonth(), hour, minute));
+		date = date.minusDays(7);
+		//15 days ago, should never be valid
+		quiz.addQuiz(new quizBean(quizCounter++, date.getMonthValue(), date.getDayOfMonth(), hour, minute));
+		
+		//set up core retakes
+		retake = new retakes();
+		date = date.plusDays(14); //yesterday, should not show up.
+		retake.addRetake(new retakeBean(retakeCounter++, "ENGR 5358", date.getMonthValue(), date.getDayOfMonth(), hour, minute));
+		date = date.plusDays(2); //tomorrow
+		retake.addRetake(new retakeBean(retakeCounter++, "ENGR 5358", date.getMonthValue(), date.getDayOfMonth(), hour, minute));
+		date = date.plusDays(7); //8 days from now
+		retake.addRetake(new retakeBean(retakeCounter++, "ENGR 5358", date.getMonthValue(), date.getDayOfMonth(), hour, minute));
+		
+		//set up course info
+		course = new courseBean("swe437", "Software Testing and Maintentance", "14",
+				LocalDate.now().plusDays(7), LocalDate.now().plusDays(14), "no/where");
+		
+		//redirect standard out to a readable stream.
+		out = new java.io.ByteArrayOutputStream();
+	    System.setOut(new java.io.PrintStream(out));
+	  //  out.reset();
+		
+		date = LocalDate.now();
+	}
+	
+	@Test //test date extension when skip is set
+	public void testSkipExtension() {
+		date = date.plusDays(21); //end date with skip set
+		String endDateString = (date.getDayOfWeek()) + ", " + date.getMonth() + " " + date.getDayOfMonth();
+		quizsched.printQuizScheduleForm(quiz, retake, course);
+		date=LocalDate.now();
+		String expectedOutput = "******************************************************************************\r\n" +
+                "GMU quiz retake scheduler for class Software Testing and Maintentance\r\n" +
+                "******************************************************************************\r\n" +
+                "\r\n" +
+                "\r\n" +
+                "You can sign up for quiz retakes within the next two weeks. \r\n" +
+                "Enter your name (as it appears on the class roster), \r\n" +
+                "then select which date, time, and quiz you wish to retake from the following list.\r\n" +
+                "\r\n" +
+                "Today is "+date.getDayOfWeek() + ", " + date.getMonth() + " " + date.getDayOfMonth()+"\r\n"+ 
+                "Currently scheduling quizzes for the next two weeks, until "+
+                date.plusDays(21).getDayOfWeek() + ", " + date.plusDays(21).getMonth() + " " + date.plusDays(21).getDayOfMonth()+
+                "\r\n" +
+                "RETAKE: "+date.plusDays(1).getDayOfWeek() + ", " + date.plusDays(1).getMonth() + " " + date.plusDays(1).getDayOfMonth()+", at 10:00 in ENGR 5358\r\n" + 
+                "    1) Quiz 1 from "+
+                date.minusDays(1).getDayOfWeek() + ", " + date.minusDays(1).getMonth() + " " + date.minusDays(1).getDayOfMonth()+
+                "\r\n" + 
+                "    2) Quiz 2 from "+
+                date.minusDays(8).getDayOfWeek() + ", " + date.minusDays(8).getMonth() + " " + date.minusDays(8).getDayOfMonth()+
+                "\r\n" + 
+                "RETAKE: "+
+                date.plusDays(8).getDayOfWeek() + ", " + date.plusDays(8).getMonth() + " " + date.plusDays(8).getDayOfMonth()+
+                ", at 10:00 in ENGR 5358\r\n" + 
+                "    3) Quiz 1 from "+
+                date.minusDays(1).getDayOfWeek() + ", " + date.minusDays(1).getMonth() + " " + date.minusDays(1).getDayOfMonth();
+		
+		assertEquals(expectedOutput,out.toString().trim());
+	}
+	
+	@Test //test that the date is not extended unnecessarily
+	public void testNoSkipExtension() {
+		date = date.plusDays(14); //end date with skip set
+		//controllability
+		course = new courseBean("swe437", "Software Testing and Maintentance", "14",
+				LocalDate.now().plusDays(21), LocalDate.now().plusDays(28), "no/where");
+		String endDateString = (date.getDayOfWeek()) + ", " + date.getMonth() + " " + date.getDayOfMonth();
+		
+		quizsched.printQuizScheduleForm(quiz, retake, course);
+		//observability
+
+		assertTrue("Skip boolean not thrown.",out.toString().contains(endDateString));
+	}
+	
+	@Test //test printing retakes when in range
+	public void testRetakesAppearing() {
+		date = date.plusDays(1);
+		//controllability
+		String retakeString = ("RETAKE: " + date.getDayOfWeek() + ", " +
+				date.getMonth() + " " +
+				date.getDayOfMonth() + ", at " +
+				LocalTime.of (hour, minute) + " in " +
+                "ENGR 5358");
+		
+		quizsched.printQuizScheduleForm(quiz, retake, course);
+
+		//observability
+		assertTrue("Retakes did not appear.", out.toString().contains(retakeString));
+	}
+	
+	@Test //test that retakes out of range are NOT printed
+	public void testRetakesNotAppearing() {
+		date = date.minusDays(1);
+		//controllability
+		String retakeString = ("RETAKE: " + date.getDayOfWeek() + ", " +
+				date.getMonth() + " " +
+				date.getDayOfMonth() + ", at " +
+				LocalTime.of (hour, minute) + " in " +
+                "ENGR 5358");
+		
+		quizsched.printQuizScheduleForm(quiz, retake, course);
+		//observability
+
+		assertTrue("Retakes appeared incorrectly.", !out.toString().contains(retakeString));
+	}
+	
+	@Test //test that quizzes in range are printed
+	public void testQuizzesAppearing() {
+		date = date.minusDays(1);
+		//controllability
+		String quizString = ("Quiz " + 1 + " from " + date.getDayOfWeek() +
+				", " + date.getMonth() + " " + date.getDayOfMonth() );
+		
+		quizsched.printQuizScheduleForm(quiz, retake, course);
+		//observability
+		int occurances = out.toString().split(quizString).length - 1;
+		assertTrue("Quizzes did not appear properly.", occurances == 2);
+	}
+	
+	@Test //test that quizzes out of range are NOT printed
+	public void testQuizzesNotAppearing() {
+		date = date.minusDays(1);
+		//controllability
+		String retakeString = ("RETAKE: " + date.getDayOfWeek() + ", " +
+				date.getMonth() + " " +
+				date.getDayOfMonth() + ", at " +
+				LocalTime.of (hour, minute) + " in " +
+                "ENGR 5358");
+		
+		quizsched.printQuizScheduleForm(quiz, retake, course);
+		//observability
+
+		assertTrue("Retakes did not appear.", !out.toString().contains(retakeString));
+	}
+}
+
